@@ -1,0 +1,51 @@
+﻿@model IEnumerable<Forum>
+
+<!--Start of Forums Container (Forum Title + Subforum List + Collapsible Button)-->
+<!--Load each forum in the model-->
+@foreach (var forum in Model)
+{
+
+    var id = forum.ForumId;
+
+    <section class="forum-container">
+
+        <!--Forum Header-->
+        <div class="bg-gradient row" aria-expanded="true">
+
+            <h2 class="col-6 list-title-font">@forum.Name</h2>
+
+            <a class="col-6" data-bs-toggle="collapse" data-bs-target="#collapseContent-@id" id="collapseBtn-@id" role="button" aria-expanded="true">
+                <i class="fa-solid fa-minus icon-right"></i>
+                <i class="fa-solid fa-plus icon-right"></i>
+            </a>
+
+        </div>
+
+        <div class="collapse show" id="collapseContent-@id">
+
+            <ul>
+                @{
+                    var count = 0;
+                    foreach (var subforum in forum.Subforums)
+                    {
+                        if (count % 2 > 0)
+                        {
+                            subforum.BackgroundColor = "light";
+                        }
+                        else
+                        {
+                            subforum.BackgroundColor = "dark";
+                        }
+                        @await Html.PartialAsync("_SubforumList", subforum);
+
+                        count++;
+                    }
+                }
+            </ul>
+
+        </div>
+    </section>
+}
+<!--End of Forums Container-->
+
+<a href="" id="back-to-top-button" data-bs-toggle="tooltip" title="Back to top"></a>

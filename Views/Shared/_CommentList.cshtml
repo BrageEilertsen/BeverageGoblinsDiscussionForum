@@ -1,0 +1,265 @@
+﻿@model Comment
+
+@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager
+@using System.Security.Claims
+
+@{
+    // Getting the current user
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var currentUser = await _userManager.FindByIdAsync(userId);
+}
+<!--Post start-->
+<article class="background-white card post-container" id="comment-@Model.CommentId">
+
+    <div class="row">
+        <!--Side content (Author, image, info)-->
+        <div class="aside-post hidden-mobile col-md-2">
+
+            <h3 class="aside-user-style mb-4">
+                <!--Choosing class for color based on rank-->
+                @{
+                    if (Model.User.Rank == "Admin")
+                    {
+                        <a href="#" class="adminTitle"
+                           title="Go to User Profile">
+                            @Model.User.UserName
+                        </a>
+                    }
+                    else if (Model.User.Rank == "Mod")
+                    {
+                        <a href="#" class="modTitle"
+                           title="Go to User Profile">
+                            @Model.User.UserName
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="#" class="memberTitle"
+                           title="Go to User Profile">
+                            @Model.User.UserName
+                        </a>
+                    }
+                }
+            </h3>
+
+            <ul>
+                <li>
+                    <a href="#" class="aside-user-photo-container" title="Go to profile">
+                        @{
+                            if (Model.User.UserPhoto != null)
+                            {
+                                var base64Image = Convert.ToBase64String(Model.User.UserPhoto);
+                                var source = String.Format("data:image/png;base64,{0}", base64Image);
+                                <img src="@source" alt="Profile Picture" class="img-avatar">
+                            }
+                            else
+                            {
+                                <i class="fa-regular fa-circle-user aside-user-photo"></i>
+                            }
+                        }
+                    </a>
+                </li>
+
+                <li class="margin-bt-20">
+                    <span class="aside-member-title">@Model.User.Rank</span>
+                </li>
+                <li class="aside-left-align">
+                    <span class="aside-subtitle">Posts: @Model.User.UserComments.Count()</span>
+
+                </li>
+                <li class="aside-left-align">
+                    <span class="aside-subtitle">Joined: <time>@Model.User.CreatedAt.ToString("d MMM yyyy")</time> </span>
+
+                </li>
+            </ul>
+        </div>
+        <!--End of side content-->
+        <!--Main Content-->
+        <div class="col-12 col-md-10 post-top">
+            <!--Top of Post (Title, date, buttons)-->
+            <div>
+                <div class="dropdown-center">
+                    <!--Ellipsis-->
+                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-ellipsis ellipsis"></i>
+                    </a>
+
+                    @{
+                        var url = Model.ThreadId + "#comment-" + Model.CommentId;
+                    }
+
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="#" class="dropdown-item" data-bs-toggle="modal"
+                               data-bs-target="#shareModal-@Model.CommentId" data-bs-id="@url">
+                                <i class="fa-solid fa-share-nodes padding-right-icon"></i>
+                                Share
+                            </a>
+                        </li>
+                        <li>
+                            @{
+                                <!--CHANGEME
+              If user is the comment's owner or user is moderator/admin -->
+                                if (User.Identity.IsAuthenticated)
+                                {
+                                    if (Model.UserId == currentUser.Id || currentUser.Rank == "Mod" || currentUser.Rank == "Admin")
+                                    {
+                                        <button class="dropdown-item" id="editBtn-@Model.CommentId" onclick="edit(@Model.CommentId)">
+                                            <i class="fa-solid fa-pen padding-right-icon"></i>
+                                            Edit
+                                        </button>
+                                        <a href="" class="dropdown-item" data-bs-toggle="modal"
+                                           data-bs-target="#deleteModal-@Model.CommentId" data-bs-id="@Model.CommentId">
+                                            <i class="fa-solid fa-eraser padding-right-icon"></i>
+                                            Delete
+                                        </a>
+                                    }
+                                }
+
+                            }
+
+                        </li>
+                    </ul>
+                </div>
+                <!-- Only for mobile -->
+                <div class="only-mobile">
+
+                    <div class="post-top-user-photo-automargin">
+                        <a href="#" class="post-top-user-photo-container" title="Go to profile">
+                            @{
+                                if (Model.User.UserPhoto != null)
+                                {
+                                    var base64Image = Convert.ToBase64String(Model.User.UserPhoto);
+                                    var source = String.Format("data:image/png;base64,{0}", base64Image);
+                                    <img src="@source" alt="Profile Picture" class="img-avatar">
+                                }
+                                else
+                                {
+                                    <i class="fa-regular fa-circle-user aside-user-photo"></i>
+                                }
+                            }
+                        </a>
+                    </div>
+
+                    <div>
+                        <h4 class="post-top-title">
+                            @{
+                                if (Model.User.Rank == "admin")
+                                {
+                                    <a href="#" class="adminTitle user-link"
+                                       title="Go to User Profile">
+                                        @Model.User.UserName
+                                    </a>
+                                }
+                                else if (Model.User.Rank == "mod")
+                                {
+                                    <a href="#" class="modTitle user-link"
+                                       title="Go to User Profile">
+                                        @Model.User.UserName
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a href="#" class="memberTitle user-link"
+                                       title="Go to User Profile">
+                                        @Model.User.UserName
+                                    </a>
+                                }
+                            }
+                        </h4>
+
+                        <a href="#comment-@Model.CommentId" class="post-top-subtitle" title="Jump to comment">
+                            Posted <time>@Model.CreatedAt.ToString("M")</time>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- For regular display -->
+                <a href="#comment-@Model.CommentId" title="Jump to comment">
+                    <h4 class="post-top-title hidden-mobile">@Model.Title</h4>
+                </a>
+                <a href="#comment-@Model.CommentId" class="post-top-subtitle hidden-mobile" title="Jump to comment">
+                    Posted <time>@Model.CreatedAt.ToString("M")</time>
+                </a>
+            </div>
+
+            <!--Body of Post-->
+            <form asp-controller="Comment" asp-action="Update" method="post" class="mb-3">
+                <div class="post-body">
+                    <p id="comment-@Model.CommentId-body" contenteditable="false" class="prevent-blur">
+                        @Model.Body
+                    </p>
+                    <input id="comment-@Model.CommentId-input" type="hidden" asp-for="Body" value="" />
+                    <span asp-validation-for="@Model.Body" class="text-danger m-2-5"></span>
+                </div>
+
+                <input type="hidden" asp-for="CommentId" value="@Model.CommentId" />
+                <input type="hidden" asp-for="ThreadId" value="@Model.ThreadId" />
+                <input type="hidden" asp-for="UserId" value="@Model.UserId" />
+                <input type="hidden" asp-for="Title" value="@Model.Title" />
+
+                <button type="submit" class="std-pink-btn mr-3 hidden" id="save-comment-@Model.CommentId">
+                    Save changes
+                </button>
+
+                <button type="button" class="std-purple-btn hidden" id="cancel-save-@Model.CommentId">
+                    Cancel
+                </button>
+            </form>
+
+        </div>
+
+    </div>
+    <!--End of Main Content-->
+
+</article>
+<!--End of Post Content-->
+<!-- Sharing Modal -->
+<div class="modal fade" id="shareModal-@Model.CommentId" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 modal-font" id="shareModalLabel">Share this post!</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 class="modal-subtitle">Link to this comment:</h5>
+                <input type="text" class="share-input" id="comment-id" value="https://localhost:7054/Thread/Container/@Model.ThreadId#comment-@Model.CommentId">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deleting Modal -->
+<div class="modal fade" id="deleteModal-@Model.CommentId" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header fd-column">
+                <div>
+                    <span class="circle-icon">
+                        <i class="fa-solid fa-triangle-exclamation fa-2xl"></i>
+                    </span>
+
+                </div>
+                <div>
+                    <h1 class="modal-title fs-5 modal-font" id="deleteModalLabel">Are you sure?</h1>
+
+                </div>
+            </div>
+            <div class="modal-body text-center">
+                <h2 class="modal-subtitle mt-2">This action cannot be undone.</h2>
+                <h3 class="modal-subtitle mb-5">The content of your comment (Id #@Model.CommentId) will be lost forever.</h3>
+
+
+                <div>
+                    <form asp-controller="Comment" asp-action="DeleteConfirmed" asp-route-id="@Model.CommentId" method="post">
+                        <button type="submit" class="mb-3 std-pink-btn w-75">Delete</button>
+                    </form>
+                </div>
+                <div>
+                    <button type="button" class="mb-4 std-purple-btn w-75" data-bs-dismiss="modal" aria-label="Close">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
